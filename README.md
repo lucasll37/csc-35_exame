@@ -1,4 +1,12 @@
-make env
-source ./.venv/bin/activate
+- ### Cria ambiente local e instala depedências
+    ```bash
+    - make env
+    ```
 
-run ./src/main.py or ./src/proto.ipynb
+- ### Ativa ambiente python local
+    ```bash
+    source ./.venv/bin/activate
+    ```
+
+- ### Entrypoint
+    `./src/main.py` or `./src/proto.ipynb`
