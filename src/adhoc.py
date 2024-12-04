@@ -33,11 +33,14 @@ class AdHoc():
         for uav_id, uav in self.uav.items():
             
             for msg in uav.buffer_msg_out:
-                self.uav[msg.destination_id].buffer_msg_in.append(msg)
-                self.messages_in_transit.append(msg)
+                if msg.type == "discover":
+                    self.uav[msg.destination_id].buffer_msg_in.append(msg)
+                    self.messages_in_transit.append(msg)
+
+                elif msg.type == "return":
+                    self.bsc[msg.destination_id].buffer_msg_in.append(msg)
 
             uav.clear_buffer_msg_out()
-            uav.update()
 
         for bsc_id, bsc in self.bsc.items():
             for msg in bsc.buffer_msg_out:
@@ -45,6 +48,11 @@ class AdHoc():
                 self.messages_in_transit.append(msg)
 
             bsc.clear_buffer_msg_out()
+
+        for uav_id, uav in self.uav.items():
+            uav.update()
+
+        for bsc_id, bsc in self.bsc.items():
             bsc.update()
 
         self._update_neighbors()
@@ -65,9 +73,9 @@ class AdHoc():
                 color = GREEN if message_in_transit else BLUE
 
                 x1 = int((bsc.position[0] + LARGURA) * 0.5)
-                y1 = int((bsc.position[1] + ALTURA) * 0.5)
+                y1 = int((bsc.position[1] + ALTURA) * 0.4)
                 x2 = int((auv_neighbor.position[0] + LARGURA) * 0.5)
-                y2 = int((auv_neighbor.position[1] + ALTURA) * 0.5)
+                y2 = int((auv_neighbor.position[1] + ALTURA) * 0.4)
 
                 distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
                 if distance == 0:
@@ -102,9 +110,9 @@ class AdHoc():
                 color = GREEN if message_in_transit else BLUE
 
                 x1 = int((uav.position[0] + LARGURA) * 0.5)
-                y1 = int((uav.position[1] + ALTURA) * 0.5)
+                y1 = int((uav.position[1] + ALTURA) * 0.4)
                 x2 = int((auv_neighbor.position[0] + LARGURA) * 0.5)
-                y2 = int((auv_neighbor.position[1] + ALTURA) * 0.5)
+                y2 = int((auv_neighbor.position[1] + ALTURA) * 0.4)
 
                 distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
                 if distance == 0:
@@ -130,110 +138,19 @@ class AdHoc():
         draw_logs(screen, logs)
 
         return pause
-
-
-    # def draw(self, screen: pygame.Surface) -> bool:
-    #     pause = False
-
-    #     for bsc in self.bsc.values():
-    #         bsc.draw(screen)
-
-    #         # Desenha as linhas tracejadas para os vizinhos
-    #         for auv_neighbor in bsc.neighbors:
-
-    #             # Verifica se há mensagem em trânsito nesta conexão
-    #             message_in_transit = any(
-    #                 msg.source_id == bsc.id and msg.destination_id == auv_neighbor.id for msg in self.messages_in_transit
-    #             )
-
-    #             # Define a cor: verde se há mensagem, BLUE se é apenas conexão
-    #             color = GREEN if message_in_transit else BLUE
-
-
-    #             # Calcula as posições escaladas para a tela
-    #             x1 = int((bsc.position[0] + LARGURA) * 0.5)
-    #             y1 = int((bsc.position[1] + ALTURA) * 0.5)
-    #             x2 = int((auv_neighbor.position[0] + LARGURA) * 0.5)
-    #             y2 = int((auv_neighbor.position[1] + ALTURA) * 0.5)
-
-    #             # # Calcula a distância total e a direção entre os dois pontos
-    #             distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    #             if distance == 0:
-    #                 continue  # Evita divisão por zero
-    #             dx = (x2 - x1) / distance
-    #             dy = (y2 - y1) / distance
-
-    #             # Define parâmetros da linha tracejada
-    #             largura = 1
-    #             tamanho_traco = 5
-    #             espaco = 10
-    #             passo = tamanho_traco + espaco
-
-    #             # Desenha a linha tracejada
-    #             for i in range(0, int(distance), passo):
-    #                 inicio = (x1 + dx * i, y1 + dy * i)
-    #                 fim = (x1 + dx * min(i + tamanho_traco, distance), y1 + dy * min(i + tamanho_traco, distance))
-    #                 pygame.draw.line(screen, color, inicio, fim, largura)
-
-    #             if message_in_transit:
-    #                 pause = True
-
-    #     for uav in self.uav.values():
-    #         # Desenha o UAV
-    #         uav.draw(screen)
-
-    #         # Desenha as linhas tracejadas para os vizinhos
-    #         for auv_neighbor in uav.neighbors:
-    #             if uav.id < auv_neighbor.id:
-    #                 continue
-
-
-    #             # Verifica se há mensagem em trânsito nesta conexão
-    #             message_in_transit = any(
-    #                 msg.source_id == uav.id and msg.destination_id == auv_neighbor.id for msg in self.messages_in_transit
-    #             )
-
-    #             # Define a cor: verde se há mensagem, BLUE se é apenas conexão
-    #             color = GREEN if message_in_transit else BLUE
-
-    #             # Calcula as posições escaladas para a tela
-    #             x1 = int((uav.position[0] + LARGURA) * 0.5)
-    #             y1 = int((uav.position[1] + ALTURA) * 0.5)
-    #             x2 = int((auv_neighbor.position[0] + LARGURA) * 0.5)
-    #             y2 = int((auv_neighbor.position[1] + ALTURA) * 0.5)
-
-    #             # Calcula a distância total e a direção entre os dois pontos
-    #             distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    #             if distance == 0:
-    #                 continue  # Evita divisão por zero
-    #             dx = (x2 - x1) / distance
-    #             dy = (y2 - y1) / distance
-
-    #             # Define parâmetros da linha tracejada
-    #             largura = 1
-    #             tamanho_traco = 5
-    #             espaco = 10
-    #             passo = tamanho_traco + espaco
-
-    #             # Desenha a linha tracejada
-    #             for i in range(0, int(distance), passo):
-    #                 inicio = (x1 + dx * i, y1 + dy * i)
-    #                 fim = (x1 + dx * min(i + tamanho_traco, distance), y1 + dy * min(i + tamanho_traco, distance))
-    #                 pygame.draw.line(screen, color, inicio, fim, largura)
-
-    #             if message_in_transit:
-    #                 pause = True
-
-    #     return pause
                     
 
     def _update_neighbors(self):
-        # Atualiza os vizinhos das estações base
+        for auv in self.uav.values():
+            auv.bsc = list()
+
         for bsc_id, bsc in self.bsc.items():
             distances = self._close_neighbor_bsc(bsc_id)
             selected_neighbors = list(distances.keys())[:bsc.n_neighbors]
             bsc.neighbors = [self.uav[uav_id] for uav_id in selected_neighbors]
-            
+
+            for auv in bsc.neighbors:
+                auv.bsc.append(bsc)
 
         # Atualiza os vizinhos dos drones
         for uav_id, uav in self.uav.items():
@@ -244,7 +161,7 @@ class AdHoc():
         # Garante que a relação de vizinhança seja recíproca
         for uav_id, uav in self.uav.items():
             for neighbor in uav.neighbors:
-                if uav_id not in neighbor.neighbors:
+                if uav not in neighbor.neighbors:
                     neighbor.neighbors.append(uav)
 
         # Verifica se a rede é conectada
@@ -272,17 +189,15 @@ class AdHoc():
         return len(visited) == len(self.uav)
 
     def _ensure_connectivity(self):
-        """
-        Garante que todos os UAVs estão conectados adicionando conexões mínimas.
-        """
+
         uav_ids = list(self.uav.keys())
         for i in range(len(uav_ids)):
             for j in range(i + 1, len(uav_ids)):
                 uav1, uav2 = self.uav[uav_ids[i]], self.uav[uav_ids[j]]
                 if uav2.id not in uav1.neighbors and uav1.id not in uav2.neighbors:
                     # Conecta os UAVs se necessário
-                    uav1.neighbors[uav2.id] = uav2
-                    uav2.neighbors[uav1.id] = uav1
+                    uav1.neighbors.append(uav2)
+                    uav2.neighbors.append(uav1)
                     # Revalida a conectividade
                     if self._is_connected():
                         return

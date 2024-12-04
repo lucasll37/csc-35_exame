@@ -24,7 +24,7 @@ class BaseStationControl():
         self.buffer_msg_out: List[Message] = list()
         self.n_neighbors = n_neighbors
         self.neighbors: List[UAV] = list()
-        self.target: Tuple[float, float, float] | None = None
+        # self.target: Tuple[float, float, float] | None = None
         self.closest_uav_id: int | None = None
         self.request_id: int | None = None
         self.tmp_msg: List[Message] = list()
@@ -38,6 +38,14 @@ class BaseStationControl():
             msg = Message(target, type)
             msg.mission_id =self.mission_id
             msg.source_id = self.id
+            msg.position = self.target
+            self.tmp_msg.append(msg)
+
+        elif type == "execute":
+            msg = Message(target, type)
+            msg.mission_id = self.mission_id
+            msg.source_id = self.id
+            msg.closest_uav_id = self.closest_uav_id
             self.tmp_msg.append(msg)
 
     
@@ -47,7 +55,13 @@ class BaseStationControl():
 
     def handle_receive_msg(self):
         if len(self.buffer_msg_in) > 0:
-            pass
+            for msg in self.buffer_msg_in:
+                if msg.type == "return" and msg.mission_id == self.mission_id:
+                    # self.target = msg.position
+                    self.closest_uav_id = msg.closest_uav_id
+
+                    self.send_msg(msg.position, "execute")
+
 
         self._clear_buffer_msg_in()
 
@@ -56,8 +70,8 @@ class BaseStationControl():
         self.buffer_msg_in = list()
         
 
-    def set_target(self, target: Tuple[float, float, float] | None = None):
-        self.target = target
+    # def set_target(self, target: Tuple[float, float, float] | None = None):
+    #     self.target = target
         
 
     def update(self):
@@ -76,7 +90,7 @@ class BaseStationControl():
     
     def draw(self, screen: pygame.Surface):
         x = int((self.position[0] + LARGURA) * 0.5)
-        y = int((self.position[1] + ALTURA) * 0.5)
+        y = int((self.position[1] + ALTURA) * 0.4)
 
         pygame.draw.rect(screen, GREEN, pygame.Rect(x - 5, y - 5, 10, 10))
 
