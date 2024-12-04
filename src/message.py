@@ -20,7 +20,4 @@ class Message():
         return Message.id - 1
     
     def __repr__(self):
-        return f"""
-        From: #{self.source_id} | To: #{self.destination_id} | Type: #{self.type} | Mission id: #{self.mission_id}
-        Closest UAV: #{self.closest_uav_id} | Distance: {self.distance} | Message id #{self.id}: {self.position}
-        """
+        return f"Source ID: {self.source_id} | Destination ID: {self.destination_id} | Type: {self.type} | Mission ID: {self.mission_id} | Closest UAV ID: {self.closest_uav_id} | Distance: {self.distance} | Position: {self.position}"

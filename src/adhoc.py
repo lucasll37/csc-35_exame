@@ -1,187 +1,82 @@
-# import pygame
-# import numpy as np
-# from typing import List, Tuple, Dict
-# from collections import deque
-# from globals import *
-# from utils import draw_logs
-# from message import Message
-# from drone import Drone
-# from baseStationControl import BaseStationControl
-# from copy import deepcopy
-
-# class AdHoc():
-#     def __init__(self, dimention: Tuple[float, float] = (100, 100)):
-#         self.uav: Dict[int, Drone] = dict()
-#         self.bsc: Dict[int, BaseStationControl] = dict()
-#         self.dimention = dimention
-#         self.messages_in_transit: List[Message] = []
-#         self.logs: List[str] = []  # Lista para armazenar os logs das mensagens
-
-#     def add_drone(self, uav_list: List[Drone]):
-#         for uav in uav_list:
-#             self.uav[uav.id] = uav
-
-#     def add_bsc(self, gdc_list: List[BaseStationControl]):
-#         for bsc in gdc_list:
-#             self.bsc[bsc.id] = bsc
-
-#     def update(self, delta_time) -> bool:
-#         pause = False
-
-#         self.messages_in_transit.clear()
-#         self.logs.clear()  # Limpa os logs a cada atualização
-
-#         # Processa mensagens dos drones
-#         for uav_id, uav in self.uav.items():
-#             for msg in uav.buffer_msg_out:
-#                 self.messages_in_transit.append(msg)
-#                 self.logs.append(f"Mensagem {msg.id} enviada de UAV {msg.source_id} para {msg.destination_id} (Tipo: {msg.type})")
-
-#                 # Envia a mensagem para o destino apropriado
-#                 if msg.destination_id in self.uav:
-#                     self.uav[msg.destination_id].buffer_msg_in.append(msg)
-#                 elif msg.destination_id in self.bsc:
-#                     self.bsc[msg.destination_id].buffer_msg_in.append(msg)
-
-#             uav.clear_buffer_msg_out()
-
-#         # Processa mensagens das BSCs
-#         for bsc_id, bsc in self.bsc.items():
-#             for msg in bsc.buffer_msg_out:
-#                 self.messages_in_transit.append(msg)
-#                 self.logs.append(f"Mensagem {msg.id} enviada de BSC {msg.source_id} para {msg.destination_id} (Tipo: {msg.type})")
-
-#                 if msg.destination_id in self.uav:
-#                     self.uav[msg.destination_id].buffer_msg_in.append(msg)
-#                 elif msg.destination_id in self.bsc:
-#                     self.bsc[msg.destination_id].buffer_msg_in.append(msg)
-
-#             bsc.clear_buffer_msg_out()
-
-#         # Atualiza drones
-#         for uav_id, uav in self.uav.items():
-#             uav.update(delta_time)
-
-#         # Atualiza BSCs
-#         for bsc_id, bsc in self.bsc.items():
-#             bsc.update()
-
-#         self._update_neighbors()
-#         return pause
-
-#     def draw(self, screen: pygame.Surface) -> bool:
-#         pause = False
-
-#         # Desenha as BSCs
-#         for bsc in self.bsc.values():
-#             bsc.draw(screen)
-
-#             # Desenha conexões com os vizinhos
-#             for auv_neighbor in bsc.neighbors:
-#                 message_in_transit = any(
-#                     msg.source_id == bsc.id and msg.destination_id == auv_neighbor.id for msg in self.messages_in_transit
-#                 )
-#                 color = GREEN if message_in_transit else BLUE
-
-#                 x1 = int(bsc.position[0] + LARGURA / 2)
-#                 y1 = int(bsc.position[1] + ALTURA / 2)
-#                 x2 = int(auv_neighbor.position[0] + LARGURA / 2)
-#                 y2 = int(auv_neighbor.position[1] + ALTURA / 2)
-
-#                 pygame.draw.line(screen, color, (x1, y1), (x2, y2), 1)
-
-#         # Desenha os UAVs
-#         for uav in self.uav.values():
-#             uav.draw(screen)
-
-#             # Desenha conexões com os vizinhos
-#             for auv_neighbor in uav.neighbors:
-#                 if uav.id < auv_neighbor.id:
-#                     continue
-
-#                 message_in_transit = any(
-#                     msg.source_id == uav.id and msg.destination_id == auv_neighbor.id for msg in self.messages_in_transit
-#                 )
-#                 color = GREEN if message_in_transit else BLUE
-
-#                 x1 = int(uav.position[0] + LARGURA / 2)
-#                 y1 = int(uav.position[1] + ALTURA / 2)
-#                 x2 = int(auv_neighbor.position[0] + LARGURA / 2)
-#                 y2 = int(auv_neighbor.position[1] + ALTURA / 2)
-
-#                 pygame.draw.line(screen, color, (x1, y1), (x2, y2), 1)
-
-#         # Chama a função draw_logs para exibir as mensagens
-#         draw_logs(screen, self.logs)
-
-#         return pause
-
 import pygame
 import numpy as np
 from typing import List, Tuple, Dict
 from collections import deque
 from globals import *
-from utils import draw_logs
+from encryption import *
 from message import Message
-from drone import Drone
+from uav import UAV
 from baseStationControl import BaseStationControl
-from copy import deepcopy
 
 
 class AdHoc():
-    def __init__(self, dimention: Tuple[float, float] = (100, 100)):
-        self.uav: Dict[int, Drone] = dict()
+    def __init__(self, dimention: Tuple[float, float] = (800, 600), logs = False):
+        self.uav: Dict[int, UAV] = dict()
         self.bsc: Dict[int, BaseStationControl] = dict()
-        self.dimention = dimention
         self.messages_in_transit: List[Message] = []
+        self.logs = logs
 
-    def add_drone(self, uav_list: List[Drone]):
+
+    def add_drone(self, uav_list: List[UAV]):
         for uav in uav_list:
             self.uav[uav.id] = uav
+
 
     def add_bsc(self, gdc_list: List[BaseStationControl]):
         for bsc in gdc_list:
             self.bsc[bsc.id] = bsc
+
 
     def update(self, delta_time: float) -> bool:
         pause = False
 
         self.messages_in_transit.clear()
 
-        for uav_id, uav in self.uav.items():
-            
+        for uav in self.uav.values():
             for msg in uav.buffer_msg_out:
-                print(msg) # logs
+                encrypted_msg = encrypt_object(uav.symmetric_key, msg)
+
+                if self.logs:
+                    print(f"\nNon-encrypted Message: {msg}")
+                    print(f"Encrypted Message (hex): {encrypted_msg.hex()}\n\n")
+
+                self.messages_in_transit.append(msg)
 
                 if msg.type == "discover":
-                    self.uav[msg.destination_id].buffer_msg_in.append(msg)
-                    self.messages_in_transit.append(msg)
+                    self.uav[msg.destination_id].buffer_msg_in.append(encrypted_msg)
 
                 elif msg.type == "return":
-                    self.bsc[msg.destination_id].buffer_msg_in.append(msg)
+                    self.bsc[msg.destination_id].buffer_msg_in.append(encrypted_msg)
+
+                elif msg.type == "execute":
+                    self.uav[msg.destination_id].buffer_msg_in.append(encrypted_msg)
 
                 elif msg.type == "complete":
-                    self.uav[msg.destination_id].buffer_msg_in.append(msg)
+                    self.uav[msg.destination_id].buffer_msg_in.append(encrypted_msg)
 
                 elif msg.type == "finish":
-                    self.bsc[msg.destination_id].buffer_msg_in.append(msg)
+                    self.bsc[msg.destination_id].buffer_msg_in.append(encrypted_msg)
 
             uav.clear_buffer_msg_out()
 
-        for bsc_id, bsc in self.bsc.items():
+        for bsc in self.bsc.values():
             for msg in bsc.buffer_msg_out:
-                print(msg) # logs
+                encrypted_msg = encrypt_object(bsc.symmetric_key, msg)
 
-                self.uav[msg.destination_id].buffer_msg_in.append(msg)
+                if self.logs:
+                    print(f"\nNon-encrypted Message: {msg}")
+                    print(f"Encrypted Message (hex): {encrypted_msg.hex()}\n\n")
+
                 self.messages_in_transit.append(msg)
+                self.uav[msg.destination_id].buffer_msg_in.append(encrypted_msg)
 
             bsc.clear_buffer_msg_out()
 
-        for uav_id, uav in self.uav.items():
-            uav.update(delta_time)
+        # for uav in self.uav.values():
+        #     uav.update(delta_time)
 
-        for bsc_id, bsc in self.bsc.items():
-            bsc.update(delta_time)
+        # for bsc in self.bsc.values():
+        #     bsc.update(delta_time)
 
         self._update_neighbors()
         return pause
@@ -198,7 +93,7 @@ class AdHoc():
                 message_in_transit = any(
                     msg.source_id == bsc.id and msg.destination_id == auv_neighbor.id for msg in self.messages_in_transit
                 )
-                color = GREEN if message_in_transit else BLUE
+                color = GREEN if message_in_transit else WHITE
 
                 x1 = int((bsc.position[0] + LARGURA) * 0.5)
                 y1 = int((bsc.position[1] + ALTURA) * 0.5)

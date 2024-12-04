@@ -2,18 +2,25 @@ import pygame
 from time import sleep
 import numpy as np
 from drone import Drone
+from attacker import Atacker
 from baseStationControl import BaseStationControl
 from adhoc import AdHoc
 from globals import *
+from encryption import *
 
 
-drones = [Drone() for _ in range(13)]
-base_station_0 = BaseStationControl(position=(-LARGURA * 0.9, -ALTURA * 0.9, 0))
+n_drones = 3
+symmetric_key = generate_symmetric_key()
 
-fanet = AdHoc()
-fanet.add_drone(drones)
+base_station_0 = BaseStationControl(position=(-LARGURA * 0.9, -ALTURA * 0.9, 0), symmetric_key=symmetric_key)
+drones = [Drone(symmetric_key=symmetric_key) for _ in range(n_drones)]
+# atackers = [Atacker(symmetric_key=symmetric_key, malicious = False)]
+
+# Inicializa a rede FANET
+fanet = AdHoc(logs=False)
 fanet.add_bsc([base_station_0])
-
+fanet.add_drone(drones)
+# fanet.add_drone(atackers)
 
 # Loop principal
 def main():
@@ -21,9 +28,7 @@ def main():
     SCREEN = pygame.display.set_mode((LARGURA, ALTURA))
     pygame.display.set_caption("Flying Ad Hoc Network (FANET)")
 
-
     base_station_0.send_msg((LARGURA * np.random.uniform(-1, 1), -ALTURA * np.random.uniform(-1, 1), 10), "discover")
-
 
     clock = pygame.time.Clock()
     RUNNING = True

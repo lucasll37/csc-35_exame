@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 from copy import deepcopy
+from encryption import *
 from typing import Tuple, List
 from globals import *
 from message import Message
@@ -11,7 +12,7 @@ class BaseStationControl():
     id = 0
     mission_id = 0
 
-    def __init__(self, position: Tuple[float, float, float] | None = None, n_neighbors = 1):
+    def __init__(self, position: Tuple[float, float, float] | None = None, n_neighbors = 1, symmetric_key: bytes | None = None):
 
         if position is None:
             self.position = (np.random.uniform(-LARGURA, LARGURA), np.random.uniform(-ALTURA, ALTURA), 0)
@@ -28,7 +29,8 @@ class BaseStationControl():
         self.closest_uav_id: int | None = None
         self.request_id: int | None = None
         self.tmp_msg: List[Message] = list()
-        
+        self.symmetric_key = symmetric_key
+
         
     def send_msg(self, target: Tuple[float, float, float], type: str):
 
@@ -54,11 +56,12 @@ class BaseStationControl():
 
     def handle_receive_msg(self):
         if len(self.buffer_msg_in) > 0:
-            for msg in self.buffer_msg_in:
+
+            for encrypted_msg in self.buffer_msg_in:
+                msg = decrypt_object(self.symmetric_key, encrypted_msg)
                 
                 if msg.type == "return" and msg.mission_id == self.mission_id:
                     self.closest_uav_id = msg.closest_uav_id
-
                     self.send_msg(msg.position, "execute")
 
                 if msg.type == "finish" and msg.mission_id == self.mission_id:
@@ -90,7 +93,7 @@ class BaseStationControl():
         x = int((self.position[0] + LARGURA) * 0.5)
         y = int((self.position[1] + ALTURA) * 0.5)
 
-        pygame.draw.rect(screen, GREEN, pygame.Rect(x - 5, y - 5, 10, 10))
+        pygame.draw.rect(screen, WHITE, pygame.Rect(x - 5, y - 5, 10, 10))
 
 
     @classmethod
