@@ -1,0 +1,1 @@
+fanet = AdHoc(symmetric_key=symmetric_key, logs=True)

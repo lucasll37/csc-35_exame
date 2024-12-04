@@ -47,9 +47,10 @@ class Drone(UAV):
         self._handle_receive_msg(delta_time)
         self._handle_move(delta_time)
         self._handle_discover(delta_time)
+        
 
     def _handle_discover(self, delta_time: float | None = None):
-        if self.saw_discover :
+        if self.saw_discover:
             self.current_timeout += 1
 
             if self.current_timeout >= self.timeout:
@@ -92,6 +93,9 @@ class Drone(UAV):
             for encrypted_msg in self.buffer_msg_in:
                 msg = decrypt_object(self.symmetric_key, encrypted_msg)
 
+                if self.current_mission_id > msg.mission_id:
+                    continue
+
                 if self.current_mission_id < msg.mission_id:
                     self.current_mission_id = msg.mission_id
                     self.target = msg.position
@@ -100,7 +104,6 @@ class Drone(UAV):
                     self.saw_execute = False
                     self.saw_complete = False
                     self.closest_distance = float('inf')
-
 
                 if msg.type == "discover":
                     if self.closest_distance != float('inf') and self.closest_distance <= msg.distance:
@@ -204,9 +207,8 @@ class Drone(UAV):
             size = 5
 
             # Desenhar o "X" usando duas linhas cruzadas
-            pygame.draw.line(screen, RED, (x - size, y - size), (x + size, y + size), 2)
-            pygame.draw.line(screen, RED, (x - size, y + size), (x + size, y - size), 2)
-
+            pygame.draw.line(screen, GREEN, (x - size, y - size), (x + size, y + size), 2)
+            pygame.draw.line(screen, GREEN, (x - size, y + size), (x + size, y - size), 2)
 
 
     def distance_target(self, position: Tuple[float, float, float]) -> float:
