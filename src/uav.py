@@ -8,9 +8,9 @@ import numpy as np
 class UAV(ABC):
     id = 0
 
-    def __init__(self, position: Tuple[float, float, float] | None = None, velocity: float = 1):
+    def __init__(self, position: Tuple[float, float, float] | None = None, speed: float = 2):
         self.id = self._id_generator()
-        self.velocity = velocity
+        # self.speed = speed
 
         if position is None:
             self.position = (np.random.uniform(-LARGURA, LARGURA), np.random.uniform(-ALTURA, ALTURA), 10)

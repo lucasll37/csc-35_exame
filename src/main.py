@@ -1,42 +1,30 @@
 import pygame
+from time import sleep
+import numpy as np
 from drone import Drone
 from baseStationControl import BaseStationControl
 from adhoc import AdHoc
 from globals import *
 
-fanet = AdHoc()
 
-drone_0 = Drone()
-drone_1 = Drone()
-drone_2 = Drone()
-drone_3 = Drone()
-drone_4 = Drone()
-drone_5 = Drone()
-drone_6 = Drone()
-drone_7 = Drone()
-drone_8 = Drone()
-drone_9 = Drone()
-drone_10 = Drone()
-drone_11 = Drone()
-drone_12 = Drone()
-
+drones = [Drone() for _ in range(13)]
 base_station_0 = BaseStationControl(position=(-LARGURA * 0.9, -ALTURA * 0.9, 0))
-base_station_1 = BaseStationControl(position=(LARGURA * 0.9, ALTURA * 0.9, 0))
 
-fanet.add_drone([drone_0, drone_1, drone_2, drone_3, drone_4, drone_5, drone_6, drone_7, drone_8, drone_9, drone_10, drone_11, drone_12])
-fanet.add_bsc([base_station_0, base_station_1])
+fanet = AdHoc()
+fanet.add_drone(drones)
+fanet.add_bsc([base_station_0])
 
-base_station_0.send_msg((0, 0, 0), "discover")
-drone_0.goto((0, 0, 10))
-
-
-# Configuração do pygame
-pygame.init()
-SCREEN = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Flying Ad Hoc Network (FANET)")
 
 # Loop principal
 def main():
+    pygame.init()
+    SCREEN = pygame.display.set_mode((LARGURA, ALTURA))
+    pygame.display.set_caption("Flying Ad Hoc Network (FANET)")
+
+
+    base_station_0.send_msg((LARGURA * np.random.uniform(-1, 1), -ALTURA * np.random.uniform(-1, 1), 10), "discover")
+
+
     clock = pygame.time.Clock()
     RUNNING = True
     PAUSED = False
@@ -52,10 +40,16 @@ def main():
                     PAUSED = not PAUSED
 
         if not PAUSED:
-            # Atualiza e desenha apenas se não estiver pausado
             SCREEN.fill(BLACK)
-            fanet.update()
-            fanet.draw(SCREEN)
+            PAUSED = fanet.update(delta_time)
+            PAUSED = fanet.draw(SCREEN) or PAUSED
+
+            PAUSED = False # debug
+
+            if fanet.bsc[0].mission_id is None:
+                sleep(1)
+                base_station_0.send_msg((LARGURA * np.random.uniform(-1, 1), -ALTURA * np.random.uniform(-1, 1), 10), "discover")
+
         else:
             # Mensagem na tela enquanto pausado
             font = pygame.font.Font(None, 30)

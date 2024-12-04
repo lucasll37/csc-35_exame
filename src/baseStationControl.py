@@ -20,11 +20,11 @@ class BaseStationControl():
             self.position = position
 
         self.id = self._id_generator()
+        self.mission_id: int | None = None
         self.buffer_msg_in: List[Message] = list()
         self.buffer_msg_out: List[Message] = list()
         self.n_neighbors = n_neighbors
         self.neighbors: List[UAV] = list()
-        # self.target: Tuple[float, float, float] | None = None
         self.closest_uav_id: int | None = None
         self.request_id: int | None = None
         self.tmp_msg: List[Message] = list()
@@ -38,7 +38,6 @@ class BaseStationControl():
             msg = Message(target, type)
             msg.mission_id =self.mission_id
             msg.source_id = self.id
-            msg.position = self.target
             self.tmp_msg.append(msg)
 
         elif type == "execute":
@@ -56,11 +55,14 @@ class BaseStationControl():
     def handle_receive_msg(self):
         if len(self.buffer_msg_in) > 0:
             for msg in self.buffer_msg_in:
+                
                 if msg.type == "return" and msg.mission_id == self.mission_id:
-                    # self.target = msg.position
                     self.closest_uav_id = msg.closest_uav_id
 
                     self.send_msg(msg.position, "execute")
+
+                if msg.type == "finish" and msg.mission_id == self.mission_id:
+                    self.mission_id = None
 
 
         self._clear_buffer_msg_in()
@@ -68,13 +70,9 @@ class BaseStationControl():
 
     def _clear_buffer_msg_in(self):
         self.buffer_msg_in = list()
-        
 
-    # def set_target(self, target: Tuple[float, float, float] | None = None):
-    #     self.target = target
-        
 
-    def update(self):
+    def update(self, delta_time: float | None = None):
         self.handle_receive_msg()
 
         if len(self.tmp_msg) > 0 and len(self.neighbors) > 0:
