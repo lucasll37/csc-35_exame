@@ -186,7 +186,7 @@ class Drone(UAV):
 
     def draw(self, screen: pygame.Surface):
         x = int((self.position[0] + LARGURA) * 0.5)
-        y = int((self.position[1] + ALTURA) * 0.4)
+        y = int((self.position[1] + ALTURA) * 0.5)
 
         color = RED if self.active else BLUE
         pygame.draw.circle(screen, color, (x, y), 5)

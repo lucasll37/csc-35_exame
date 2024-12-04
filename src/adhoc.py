@@ -151,6 +151,8 @@ class AdHoc():
         for uav_id, uav in self.uav.items():
             
             for msg in uav.buffer_msg_out:
+                print(msg) # logs
+
                 if msg.type == "discover":
                     self.uav[msg.destination_id].buffer_msg_in.append(msg)
                     self.messages_in_transit.append(msg)
@@ -168,6 +170,8 @@ class AdHoc():
 
         for bsc_id, bsc in self.bsc.items():
             for msg in bsc.buffer_msg_out:
+                print(msg) # logs
+
                 self.uav[msg.destination_id].buffer_msg_in.append(msg)
                 self.messages_in_transit.append(msg)
 
@@ -197,9 +201,9 @@ class AdHoc():
                 color = GREEN if message_in_transit else BLUE
 
                 x1 = int((bsc.position[0] + LARGURA) * 0.5)
-                y1 = int((bsc.position[1] + ALTURA) * 0.4)
+                y1 = int((bsc.position[1] + ALTURA) * 0.5)
                 x2 = int((auv_neighbor.position[0] + LARGURA) * 0.5)
-                y2 = int((auv_neighbor.position[1] + ALTURA) * 0.4)
+                y2 = int((auv_neighbor.position[1] + ALTURA) * 0.5)
 
                 distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
                 if distance == 0:
@@ -234,9 +238,9 @@ class AdHoc():
                 color = GREEN if message_in_transit else BLUE
 
                 x1 = int((uav.position[0] + LARGURA) * 0.5)
-                y1 = int((uav.position[1] + ALTURA) * 0.4)
+                y1 = int((uav.position[1] + ALTURA) * 0.5)
                 x2 = int((auv_neighbor.position[0] + LARGURA) * 0.5)
-                y2 = int((auv_neighbor.position[1] + ALTURA) * 0.4)
+                y2 = int((auv_neighbor.position[1] + ALTURA) * 0.5)
 
                 distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
                 if distance == 0:
@@ -259,7 +263,7 @@ class AdHoc():
                     logs.append(f"Message in transit from UAV {uav.id} to UAV {auv_neighbor.id}")
 
         # Chama a função utilitária para exibir os logs
-        draw_logs(screen, logs)
+        # draw_logs(screen, logs)
 
         return pause
                     

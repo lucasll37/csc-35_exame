@@ -88,7 +88,7 @@ class BaseStationControl():
     
     def draw(self, screen: pygame.Surface):
         x = int((self.position[0] + LARGURA) * 0.5)
-        y = int((self.position[1] + ALTURA) * 0.4)
+        y = int((self.position[1] + ALTURA) * 0.5)
 
         pygame.draw.rect(screen, GREEN, pygame.Rect(x - 5, y - 5, 10, 10))
 
