@@ -10,7 +10,7 @@ from baseStationControl import BaseStationControl
 
 
 class Drone(UAV):
-    def __init__(self, symmetric_key: bytes | None):
+    def __init__(self, symmetric_key: bytes | None, timeout = 50):
         super().__init__(symmetric_key=symmetric_key)
 
         self.buffer_msg_in: List[Message] = list()
@@ -23,7 +23,7 @@ class Drone(UAV):
         self.closest_uav_id: Optional[int] = None
         self.closest_distance: float = float('inf')
         self.current_mission_id = -1
-        self.timeout = 5 # 100
+        self.timeout = timeout
         self.current_timeout = 0
         self.saw_discover = False
         self.saw_execute = False
@@ -132,40 +132,43 @@ class Drone(UAV):
                                 self.buffer_msg_out.append(_msg)
 
                 elif msg.type == "execute":
-                    print("Entrou em execute")
                     if self.saw_execute:
                         continue
                     else:
                         self.saw_execute = True
 
                     if msg.closest_uav_id == self.id:
-                        print(f"Drone {self.id} executando missão {self.current_mission_id}")
+                        # print(f"Drone {self.id} executando missão {self.current_mission_id}")
                         self.goto(msg.position)
 
                     else:
-                        print(f"Drone {self.id} repassando missão {self.current_mission_id}")
                         for neighbor in self.neighbors:
                             _msg = deepcopy(msg)
                             if neighbor.id != msg.source_id:
+                                # print(f"Drone {self.id} repassando missão {self.current_mission_id} para o drone {neighbor.id}")
                                 _msg.source_id = self.id
                                 _msg.destination_id = neighbor.id
                                 self.buffer_msg_out.append(_msg)
 
                 elif msg.type == "complete":
+                    # print(f" {self.id} Entrou em complete")
                     if self.saw_complete:
+                        # print(f"Eu sou o drone {self.id} e já vi a mensagem de complete")
                         continue
                     else:
                         self.saw_complete = True
 
                     if len(self.bsc) > 0:
+                        # print(f"Drone {self.id} finalizando missão {self.current_mission_id} | Irei informar o BSC")
                         self.send_msg_to_bsc(type="finish")
                     else:
                         for neighbor in self.neighbors:
                             _msg = deepcopy(msg)
-                            if neighbor.id != msg.source_id:
-                                _msg.source_id = self.id
-                                _msg.destination_id = neighbor.id
-                                self.buffer_msg_out.append(_msg)
+                            # if neighbor.id != msg.source_id:
+                            # print(f"Drone {self.id} repassando finalização da missão {self.current_mission_id} para o drone {neighbor.id}")
+                            _msg.source_id = self.id
+                            _msg.destination_id = neighbor.id
+                            self.buffer_msg_out.append(_msg)
 
             self._clear_buffer_msg_in()
 
@@ -182,6 +185,9 @@ class Drone(UAV):
                 self.active = False
                 self.direction = (0, 0, 0)
                 self.send_msg(Message(self.target, type="complete"))
+
+                # print(f"Drone {self.id} chegou ao destino {self.target}")
+                    
             else:
                 self.position = (new_position[0], new_position[1], new_position[2])
 
@@ -191,6 +197,16 @@ class Drone(UAV):
 
         color = GREEN if self.active else BLUE
         pygame.draw.circle(screen, color, (x, y), 5)
+
+        if self.active:
+            x = int((self.target[0] + LARGURA) * 0.5)
+            y = int((self.target[1] + ALTURA) * 0.5)
+            size = 5
+
+            # Desenhar o "X" usando duas linhas cruzadas
+            pygame.draw.line(screen, RED, (x - size, y - size), (x + size, y + size), 2)
+            pygame.draw.line(screen, RED, (x - size, y + size), (x + size, y - size), 2)
+
 
 
     def distance_target(self, position: Tuple[float, float, float]) -> float:

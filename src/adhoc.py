@@ -72,11 +72,11 @@ class AdHoc():
 
             bsc.clear_buffer_msg_out()
 
-        # for uav in self.uav.values():
-        #     uav.update(delta_time)
+        for uav in self.uav.values():
+            uav.update(delta_time)
 
-        # for bsc in self.bsc.values():
-        #     bsc.update(delta_time)
+        for bsc in self.bsc.values():
+            bsc.update(delta_time)
 
         self._update_neighbors()
         return pause

@@ -2,25 +2,25 @@ import pygame
 from time import sleep
 import numpy as np
 from drone import Drone
-from attacker import Atacker
+from hacker import Hacker
 from baseStationControl import BaseStationControl
 from adhoc import AdHoc
 from globals import *
 from encryption import *
 
 
-n_drones = 3
+n_drones = 6
 symmetric_key = generate_symmetric_key()
 
 base_station_0 = BaseStationControl(position=(-LARGURA * 0.9, -ALTURA * 0.9, 0), symmetric_key=symmetric_key)
 drones = [Drone(symmetric_key=symmetric_key) for _ in range(n_drones)]
-# atackers = [Atacker(symmetric_key=symmetric_key, malicious = False)]
+hackers = [Hacker(symmetric_key=symmetric_key)]
 
 # Inicializa a rede FANET
-fanet = AdHoc(logs=False)
+fanet = AdHoc(logs=True)
 fanet.add_bsc([base_station_0])
 fanet.add_drone(drones)
-# fanet.add_drone(atackers)
+# fanet.add_drone(hackers)
 
 # Loop principal
 def main():

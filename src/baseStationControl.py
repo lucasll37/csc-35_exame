@@ -41,6 +41,7 @@ class BaseStationControl():
             msg.mission_id =self.mission_id
             msg.source_id = self.id
             self.tmp_msg.append(msg)
+            # print(f"Emitindo mensagem de descoberta | mission_id: {self.mission_id}")
 
         elif type == "execute":
             msg = Message(target, type)
