@@ -30,12 +30,20 @@ class BaseStationControl():
         self.request_id: int | None = None
         self.tmp_msg: List[Message] = list()
         self.symmetric_key = symmetric_key
+        self.emit_execute = False
+
+        _font = pygame.font.match_font('Droid Sans Mono') 
+        _image = pygame.image.load("./assets/bsc_0.png")
+        
+        self.font = pygame.font.Font(_font, 18)
+        self.bsc_image = pygame.transform.scale(_image, (50, 50))
 
         
     def send_msg(self, target: Tuple[float, float, float], type: str):
 
         if type == "discover":
             self.mission_id = self._mission_id_generator()
+            self.emit_execute = False
             
             msg = Message(target, type)
             msg.mission_id =self.mission_id
@@ -44,6 +52,8 @@ class BaseStationControl():
             # print(f"Emitindo mensagem de descoberta | mission_id: {self.mission_id}")
 
         elif type == "execute":
+            self.emit_execute = True
+        
             msg = Message(target, type)
             msg.mission_id = self.mission_id
             msg.source_id = self.id
@@ -60,12 +70,15 @@ class BaseStationControl():
 
             for encrypted_msg in self.buffer_msg_in:
                 msg = decrypt_object(self.symmetric_key, encrypted_msg)
+
+                if msg.mission_id != self.mission_id:
+                    continue
                 
-                if msg.type == "return" and msg.mission_id == self.mission_id:
+                if msg.type == "return" and not self.emit_execute:
                     self.closest_uav_id = msg.closest_uav_id
                     self.send_msg(msg.position, "execute")
 
-                if msg.type == "finish" and msg.mission_id == self.mission_id:
+                if msg.type == "finish":
                     self.mission_id = None
 
 
@@ -94,7 +107,12 @@ class BaseStationControl():
         x = int((self.position[0] + LARGURA) * 0.5)
         y = int((self.position[1] + ALTURA) * 0.5)
 
-        pygame.draw.rect(screen, WHITE, pygame.Rect(x - 5, y - 5, 10, 10))
+        screen.blit(self.bsc_image,
+                    (x - self.bsc_image.get_width() // 2, 
+                    y - self.bsc_image.get_height() // 2))
+        
+        text_surface = self.font.render(f"BSC_ID: {self.id}", True, (255, 255, 255))
+        screen.blit(text_surface, (x+25, y-25))
 
 
     @classmethod

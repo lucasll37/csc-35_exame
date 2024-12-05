@@ -1,1 +1,10 @@
 .venv
+
+# Compilados do Python
+*.pyc
+*.pyo
+*.pyd
+_pycache_/
+*.pyo
+*.pyd
+*.pym

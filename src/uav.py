@@ -8,7 +8,7 @@ import numpy as np
 class UAV(ABC):
     id = 0
 
-    def __init__(self, position: Tuple[float, float, float] | None = None, speed = 150, n_neighbors=2, symmetric_key = None):
+    def __init__(self, position: Tuple[float, float, float] | None = None, speed = 200, n_neighbors=2, symmetric_key = None):
         self.id = self._id_generator()
         self.speed = speed
         self.n_neighbors = n_neighbors

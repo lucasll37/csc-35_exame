@@ -12,7 +12,7 @@ class Hacker():
     id = 0
     mission_id = 0
 
-    def __init__(self, position: Tuple[float, float, float] | None = None, n_neighbors = 1):
+    def __init__(self, position: Tuple[float, float, float] | None = None, n_neighbors = 1, attack = False):
 
         if position is None:
             self.position = (np.random.uniform(-LARGURA, LARGURA), np.random.uniform(-ALTURA, ALTURA), 0)
@@ -26,6 +26,13 @@ class Hacker():
         self.buffer_msg_out: List[Message] = list()
         self.n_neighbors = n_neighbors
         self.neighbors: List[UAV] = list()
+        self.attack = attack
+
+        _font = pygame.font.match_font('Droid Sans Mono') 
+        _image = pygame.image.load("./assets/hacker_0.png")
+
+        self.hacker_image = pygame.transform.scale(_image, (80, 80))
+        self.font = pygame.font.Font(_font, 18)
 
 
     def send_msg(self, target: Tuple[float, float, float], type: str):
@@ -51,23 +58,29 @@ class Hacker():
         self.buffer_msg_out = list()
 
 
-    def attack(self):
-        for neighbor in self.neighbors:
-            if neighbor.id in self.snooped_msg:
-                encrypted_msg = self.snooped_msg[neighbor.id][0]
-                self.buffer_msg_out.append(encrypted_msg)
-                print(f"[ATTACK] Encrypted Message (hex): {encrypted_msg.hex()}\n\n")
+    def _handle_attack(self):
+        if self.attack:
+            for neighbor in self.neighbors:
+                if neighbor.id in self.snooped_msg:
+                    encrypted_msg = self.snooped_msg[neighbor.id][0]
+                    self.buffer_msg_out.append(encrypted_msg)
+                    print(f"[ATTACK] Encrypted Message (hex): {encrypted_msg.hex()}\n\n")
 
 
     def update(self, delta_time: float | None = None):
-        self.attack()
+        self._handle_attack()
 
 
     def draw(self, screen: pygame.Surface):
         x = int((self.position[0] + LARGURA) * 0.5)
         y = int((self.position[1] + ALTURA) * 0.5)
 
-        pygame.draw.rect(screen, RED, pygame.Rect(x - 5, y - 5, 10, 10))
+        screen.blit(self.hacker_image,
+                    (x - self.hacker_image.get_width() // 2, 
+                    y - self.hacker_image.get_height() // 2))
+        
+        text_surface = self.font.render(f"HACKER_ID: {self.id}", True, (255, 255, 255))
+        screen.blit(text_surface, (x+25, y-25))
 
 
     @classmethod

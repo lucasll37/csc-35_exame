@@ -35,9 +35,7 @@ class AdHoc():
             self.hacker[hacker.id] = hacker
 
 
-    def update(self, delta_time: float) -> bool:
-        pause = False
-
+    def update(self, delta_time: float):
         self.messages_in_transit.clear()
 
         for uav in self.uav.values():
@@ -115,12 +113,9 @@ class AdHoc():
             hacker.update(delta_time)
 
         self._update_neighbors()
-        return pause
 
 
-    def draw(self, screen: pygame.Surface) -> bool:
-        pause = False
-
+    def draw(self, screen: pygame.Surface):
         for bsc in self.bsc.values():
             bsc.draw(screen)
 
@@ -141,7 +136,7 @@ class AdHoc():
                 dx = (x2 - x1) / distance
                 dy = (y2 - y1) / distance
 
-                largura = 1
+                largura = 4
                 tamanho_traco = 5
                 espaco = 10
                 passo = tamanho_traco + espaco
@@ -151,11 +146,10 @@ class AdHoc():
                     fim = (x1 + dx * min(i + tamanho_traco, distance), y1 + dy * min(i + tamanho_traco, distance))
                     pygame.draw.line(screen, color, inicio, fim, largura)
 
-                if message_in_transit:
-                    pause = True
-
         for hacker in self.hacker.values():
             hacker.draw(screen)
+
+            color = RED if hacker.attack else GRAY
 
             for auv_neighbor in hacker.neighbors:
                 message_in_transit = any(
@@ -174,7 +168,7 @@ class AdHoc():
                 dx = (x2 - x1) / distance
                 dy = (y2 - y1) / distance
 
-                largura = 1
+                largura = 4
                 tamanho_traco = 5
                 espaco = 10
                 passo = tamanho_traco + espaco
@@ -182,7 +176,7 @@ class AdHoc():
                 for i in range(0, int(distance), passo):
                     inicio = (x1 + dx * i, y1 + dy * i)
                     fim = (x1 + dx * min(i + tamanho_traco, distance), y1 + dy * min(i + tamanho_traco, distance))
-                    pygame.draw.line(screen, RED, inicio, fim, largura)
+                    pygame.draw.line(screen, color, inicio, fim, largura)
 
                 if message_in_transit:
                     pause = True
@@ -210,7 +204,7 @@ class AdHoc():
                 dx = (x2 - x1) / distance
                 dy = (y2 - y1) / distance
 
-                largura = 1
+                largura = 2
                 tamanho_traco = 5
                 espaco = 10
                 passo = tamanho_traco + espaco
@@ -223,8 +217,6 @@ class AdHoc():
                 if message_in_transit:
                     pause = True
 
-        return pause
-                    
 
     def _update_neighbors(self):
         for auv in self.uav.values():

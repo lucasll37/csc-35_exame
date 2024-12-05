@@ -10,7 +10,7 @@ from baseStationControl import BaseStationControl
 
 
 class Drone(UAV):
-    def __init__(self, symmetric_key: bytes | None, timeout = 50):
+    def __init__(self, symmetric_key: bytes | None, use_nounce = True, timeout = 100):
         super().__init__(symmetric_key=symmetric_key)
 
         self.buffer_msg_in: List[Message] = list()
@@ -29,6 +29,15 @@ class Drone(UAV):
         self.saw_execute = False
         self.saw_complete = False
         self.messages_seen: Set[int] = set()
+        self.use_nounce = use_nounce
+
+        _font = pygame.font.match_font('Droid Sans Mono') 
+        _image = pygame.image.load("./assets/drone_0.png")
+        
+        self.font = pygame.font.Font(_font, 18)
+        self.drone_image = pygame.transform.scale(_image, (30, 30))
+
+
 
 
     def goto(self, position: Tuple[float, float, float]):
@@ -93,43 +102,56 @@ class Drone(UAV):
             for encrypted_msg in self.buffer_msg_in:
                 msg = decrypt_object(self.symmetric_key, encrypted_msg)
 
-                if self.current_mission_id > msg.mission_id:
+                if self.use_nounce and self.current_mission_id > msg.mission_id:
                     continue
 
                 if self.current_mission_id < msg.mission_id:
                     self.current_mission_id = msg.mission_id
                     self.target = msg.position
                     self.current_timeout = 0
-                    self.saw_discover = True
+                    self.saw_discover = False
                     self.saw_execute = False
                     self.saw_complete = False
                     self.closest_distance = float('inf')
 
                 if msg.type == "discover":
-                    if self.closest_distance != float('inf') and self.closest_distance <= msg.distance:
-                        continue
-
-                    if self.closest_distance == float('inf'):
+                    ######### FISRT TIME #########
+                    if not self.saw_discover:
+                        self.saw_discover = True
                         self.closest_distance = self.distance_target(msg.position)
 
+                        if self.closest_distance < msg.distance:
+                            self.closest_uav_id = self.id
 
-                    if self.closest_distance < msg.distance:
-                        self.closest_uav_id = self.id
+                            for neighbor in self.neighbors:
+                                _msg = deepcopy(msg)
+                                _msg.source_id = self.id
+                                _msg.destination_id = neighbor.id
+                                _msg.distance = self.closest_distance
+                                _msg.closest_uav_id = self.id
+                                self.buffer_msg_out.append(_msg)
+                        
+                        else:
+                            self.closest_uav_id = msg.source_id
+                            self.closest_distance = msg.distance
+
+                            for neighbor in self.neighbors:
+                                if neighbor.id != msg.source_id:
+                                    _msg = deepcopy(msg)
+                                    _msg.source_id = self.id
+                                    _msg.destination_id = neighbor.id
+                                    self.buffer_msg_out.append(_msg)
+
+                        continue
+                                    
+                    ######### ANOTHER TIME #########
+                    if self.closest_distance > msg.distance:
+                        self.closest_uav_id = msg.source_id
+                        self.closest_distance = msg.distance
 
                         for neighbor in self.neighbors:
-                            _msg = deepcopy(msg)
-                            _msg.source_id = self.id
-                            _msg.destination_id = neighbor.id
-                            _msg.distance = self.closest_distance
-                            _msg.closest_uav_id = self.id
-                            self.buffer_msg_out.append(_msg)
-                    else:
-                        for neighbor in self.neighbors:
-                            _msg = deepcopy(msg)
                             if neighbor.id != msg.source_id:
-                                self.closest_uav_id = msg.source_id
-                                self.closest_distance = msg.distance
-
+                                _msg = deepcopy(msg)
                                 _msg.source_id = self.id
                                 _msg.destination_id = neighbor.id
                                 self.buffer_msg_out.append(_msg)
@@ -189,8 +211,6 @@ class Drone(UAV):
                 self.direction = (0, 0, 0)
                 self.send_msg(Message(self.target, type="complete"))
 
-                # print(f"Drone {self.id} chegou ao destino {self.target}")
-                    
             else:
                 self.position = (new_position[0], new_position[1], new_position[2])
 
@@ -198,17 +218,30 @@ class Drone(UAV):
         x = int((self.position[0] + LARGURA) * 0.5)
         y = int((self.position[1] + ALTURA) * 0.5)
 
-        color = GREEN if self.active else BLUE
-        pygame.draw.circle(screen, color, (x, y), 5)
+        screen.blit(self.drone_image,
+                    (x - self.drone_image.get_width() // 2, 
+                    y - self.drone_image.get_height() // 2))
+
+        transparent_surface = pygame.Surface((LARGURA, ALTURA), pygame.SRCALPHA)
+        transparent_color = (0, 0, 255, 50)
+        pygame.draw.circle(transparent_surface, transparent_color, (x, y), 100)
+        screen.blit(transparent_surface, (0, 0))
+
+        text_surface = self.font.render(f"UAV_ID: {self.id}", True, (255, 255, 255))
+        screen.blit(text_surface, (x+25, y-25))
 
         if self.active:
+            pygame.draw.circle(screen, (0, 0, 255), (x, y), 100, 1)
+
             x = int((self.target[0] + LARGURA) * 0.5)
             y = int((self.target[1] + ALTURA) * 0.5)
             size = 5
 
-            # Desenhar o "X" usando duas linhas cruzadas
             pygame.draw.line(screen, GREEN, (x - size, y - size), (x + size, y + size), 2)
             pygame.draw.line(screen, GREEN, (x - size, y + size), (x + size, y - size), 2)
+
+            text_surface = self.font.render(f"TARGET: ( {x:.0f} , {y:.0f} )", True, (255, 255, 255))
+            screen.blit(text_surface, (x+15, y-15))
 
 
     def distance_target(self, position: Tuple[float, float, float]) -> float:
